@@ -13,7 +13,7 @@ import torch.nn.functional as F
 import cv2
 import tempfile
 from subprocess import call
-os.environ['PYOPENGL_PLATFORM'] = 'osmesa' # egl
+# os.environ['PYOPENGL_PLATFORM'] = 'egl'
 import pyrender
 from psbody.mesh import Mesh
 import trimesh
@@ -25,7 +25,7 @@ def test_model(args):
 
     #build model
     model = Faceformer(args)
-    model.load_state_dict(torch.load(os.path.join(args.dataset, '{}.pth'.format(args.model_name))))
+    model.load_state_dict(torch.load(os.path.join(args.dataset, '{}.pth'.format(args.model_name)), map_location=torch.device('mps')))
     model = model.to(torch.device(args.device))
     model.eval()
 
@@ -185,7 +185,7 @@ def main():
     parser.add_argument("--feature_dim", type=int, default=128, help='64 for vocaset; 128 for BIWI')
     parser.add_argument("--period", type=int, default=25, help='period in PPE - 30 for vocaset; 25 for BIWI')
     parser.add_argument("--vertice_dim", type=int, default=23370*3, help='number of vertices - 5023*3 for vocaset; 23370*3 for BIWI')
-    parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--device", type=str, default="mps")
     parser.add_argument("--train_subjects", type=str, default="F2 F3 F4 M3 M4 M5")
     parser.add_argument("--test_subjects", type=str, default="F1 F5 F6 F7 F8 M1 M2 M6")
     parser.add_argument("--output_path", type=str, default="demo/output", help='path of the rendered video sequence')

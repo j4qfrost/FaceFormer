@@ -30,7 +30,7 @@ def trainer(args, train_loader, dev_loader, model, optimizer, criterion, epoch=1
         for i, (audio, vertice, template, one_hot, file_name) in pbar:
             iteration += 1
             # to gpu
-            audio, vertice, template, one_hot  = audio.to(device="cuda"), vertice.to(device="cuda"), template.to(device="cuda"), one_hot.to(device="cuda")
+            audio, vertice, template, one_hot  = audio.to(device="mps"), vertice.to(device="mps"), template.to(device="mps"), one_hot.to(device="mps")
             loss = model(audio, template,  vertice, one_hot, criterion,teacher_forcing=False)
             loss.backward()
             loss_log.append(loss.item())
@@ -44,7 +44,7 @@ def trainer(args, train_loader, dev_loader, model, optimizer, criterion, epoch=1
         model.eval()
         for audio, vertice, template, one_hot_all,file_name in dev_loader:
             # to gpu
-            audio, vertice, template, one_hot_all= audio.to(device="cuda"), vertice.to(device="cuda"), template.to(device="cuda"), one_hot_all.to(device="cuda")
+            audio, vertice, template, one_hot_all= audio.to(device="mps"), vertice.to(device="mps"), template.to(device="mps"), one_hot_all.to(device="mps")
             train_subject = "_".join(file_name[0].split("_")[:-1])
             if train_subject in train_subjects_list:
                 condition_subject = train_subject
@@ -78,12 +78,12 @@ def test(args, model, test_loader,epoch):
     train_subjects_list = [i for i in args.train_subjects.split(" ")]
 
     model.load_state_dict(torch.load(os.path.join(save_path, '{}_model.pth'.format(epoch))))
-    model = model.to(torch.device("cuda"))
+    model = model.to(torch.device("mps"))
     model.eval()
    
     for audio, vertice, template, one_hot_all, file_name in test_loader:
         # to gpu
-        audio, vertice, template, one_hot_all= audio.to(device="cuda"), vertice.to(device="cuda"), template.to(device="cuda"), one_hot_all.to(device="cuda")
+        audio, vertice, template, one_hot_all= audio.to(device="mps"), vertice.to(device="mps"), template.to(device="mps"), one_hot_all.to(device="mps")
         train_subject = "_".join(file_name[0].split("_")[:-1])
         if train_subject in train_subjects_list:
             condition_subject = train_subject
@@ -114,7 +114,7 @@ def main():
     parser.add_argument("--vertices_path", type=str, default="vertices_npy", help='path of the ground truth')
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1, help='gradient accumulation')
     parser.add_argument("--max_epoch", type=int, default=100, help='number of epochs')
-    parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--device", type=str, default="mps")
     parser.add_argument("--template_file", type=str, default="templates.pkl", help='path of the personalized templates')
     parser.add_argument("--save_path", type=str, default="save", help='path of the trained models')
     parser.add_argument("--result_path", type=str, default="result", help='path to the predictions')
@@ -132,9 +132,9 @@ def main():
     model = Faceformer(args)
     print("model parameters: ", count_parameters(model))
 
-    # to cuda
-    assert torch.cuda.is_available()
-    model = model.to(torch.device("cuda"))
+    # to mps
+    assert torch.backends.mps.is_available()
+    model = model.to(torch.device("mps"))
     
     #load data
     dataset = get_dataloaders(args)

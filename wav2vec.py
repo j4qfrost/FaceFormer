@@ -91,7 +91,6 @@ class Wav2Vec2Model(Wav2Vec2Model):
 
         hidden_states = self.feature_extractor(input_values)
         hidden_states = hidden_states.transpose(1, 2)
-
         if dataset == "BIWI":
             # cut audio feature
             if hidden_states.shape[1]%2 != 0:
@@ -114,7 +113,7 @@ class Wav2Vec2Model(Wav2Vec2Model):
         hidden_states = self.feature_projection(hidden_states)
 
         if self.config.apply_spec_augment and self.training:
-            batch_size, sequence_length, hidden_size = hidden_states.size()
+            batch_size, sequence_length, hidden_size = hidden_states[0].size()
             if self.config.mask_time_prob > 0:
                 mask_time_indices = _compute_mask_indices(
                     (batch_size, sequence_length),
@@ -123,7 +122,7 @@ class Wav2Vec2Model(Wav2Vec2Model):
                     attention_mask=attention_mask,
                     min_masks=2,
                 )
-                hidden_states[torch.from_numpy(mask_time_indices)] = self.masked_spec_embed.to(hidden_states.dtype)
+                hidden_states[0][torch.from_numpy(mask_time_indices)] = self.masked_spec_embed.to(hidden_states[0].dtype)
             if self.config.mask_feature_prob > 0:
                 mask_feature_indices = _compute_mask_indices(
                     (batch_size, hidden_size),
@@ -132,8 +131,9 @@ class Wav2Vec2Model(Wav2Vec2Model):
                 )
                 mask_feature_indices = torch.from_numpy(mask_feature_indices).to(hidden_states.device)
                 hidden_states[mask_feature_indices[:, None].expand(-1, sequence_length, -1)] = 0
+
         encoder_outputs = self.encoder(
-            hidden_states,
+            hidden_states[0],
             attention_mask=attention_mask,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
